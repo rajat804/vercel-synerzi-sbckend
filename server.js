@@ -16,8 +16,12 @@ const port = process.env.PORT || 4000;
 connectDB();
 
 // Middleware
+app.use(cors({
+  origin: "https://synerzi.vercel.app",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  credentials: true // if you use cookies or authorization headers
+}));
 app.use(express.json());
-app.use(cors());
 app.use("/uploads", express.static("uploads"));
 
 // 🔥 AUTH ROUTES (MOST IMPORTANT)
