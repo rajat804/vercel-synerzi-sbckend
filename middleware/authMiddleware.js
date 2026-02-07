@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
+import Admin from "../models/AdminModel.js"; // make sure path is correct
 
-export const verifyAdmin = (req, res, next) => {
+export const verifyAdmin = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -16,9 +17,14 @@ export const verifyAdmin = (req, res, next) => {
       return res.status(403).json({ message: "Admin access only" });
     }
 
-    req.admin = decoded;
+    // Fetch the full admin from DB
+    const admin = await Admin.findById(decoded.id);
+    if (!admin) return res.status(401).json({ message: "Admin not found" });
+
+    req.admin = admin; // <-- attach full admin object
     next();
   } catch (err) {
+    console.error("VERIFY ADMIN ERROR:", err);
     return res.status(401).json({ message: "Invalid token" });
   }
 };
