@@ -24,7 +24,7 @@ export const addProperty = async (req, res) => {
     let parsedAmenities = [];
     try {
       parsedAmenities = JSON.parse(amenities || "[]");
-    } catch {}
+    } catch { }
 
     // 🔥 CLOUDINARY IMAGE UPLOAD
     let imageUrls = [];
@@ -75,15 +75,11 @@ export const addProperty = async (req, res) => {
 export const updateProperty = async (req, res) => {
   try {
     const property = await Property.findById(req.params.id);
-    if (!property) {
-      return res.status(404).json({ message: "Property not found" });
-    }
+    if (!property) return res.status(404).json({ message: "Property not found" });
 
-    // 1️⃣ Update normal fields (EXCEPT images)
+    // 1️⃣ Update normal fields
     Object.keys(req.body).forEach((key) => {
-      if (
-        !["amenities", "deletedImages", "existingImages"].includes(key)
-      ) {
+      if (!["amenities", "deletedImages", "existingImages"].includes(key)) {
         property[key] = req.body[key];
       }
     });
@@ -93,15 +89,28 @@ export const updateProperty = async (req, res) => {
       property.amenities = JSON.parse(req.body.amenities);
     }
 
-    // 3️⃣ Delete images ONLY if user deleted
+    // 3️⃣ Remove deleted images from Cloudinary
     if (req.body.deletedImages) {
       const deleted = JSON.parse(req.body.deletedImages);
-      property.images = property.images.filter(
-        (img) => !deleted.includes(img)
-      );
+      property.images = property.images.filter(img => !deleted.includes(img));
+
+      for (const url of deleted) {
+        const parts = url.split("/");
+        const fileName = parts[parts.length - 1].split(".")[0];
+        await cloudinary.uploader.destroy(`synerzi-properties/${fileName}`);
+      }
     }
 
-    // 4️⃣ Upload new images (ADD only)
+    // 4️⃣ Keep existing images
+    if (req.body.existingImages) {
+      if (typeof req.body.existingImages === "string") {
+        property.images = [req.body.existingImages, ...property.images];
+      } else {
+        property.images = [...req.body.existingImages, ...property.images];
+      }
+    }
+
+    // 5️⃣ Upload new images to Cloudinary
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
         const uploadRes = await cloudinary.uploader.upload(
@@ -113,16 +122,14 @@ export const updateProperty = async (req, res) => {
     }
 
     await property.save();
+    res.json({ message: "Property updated successfully ✅", property });
 
-    res.json({
-      message: "Property updated successfully ✅",
-      property,
-    });
   } catch (err) {
-    console.error("UPDATE ERROR:", err);
+    console.error("UPDATE PROPERTY ERROR:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 
 // DELETE PROPERTY
