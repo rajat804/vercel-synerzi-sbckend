@@ -79,54 +79,38 @@ export const updateProperty = async (req, res) => {
       return res.status(404).json({ message: "Property not found" });
     }
 
-    // ---------- AMENITIES ----------
+    // 1️⃣ Update normal fields (EXCEPT images)
+    Object.keys(req.body).forEach((key) => {
+      if (
+        !["amenities", "deletedImages", "existingImages"].includes(key)
+      ) {
+        property[key] = req.body[key];
+      }
+    });
+
+    // 2️⃣ Amenities
     if (req.body.amenities) {
       property.amenities = JSON.parse(req.body.amenities);
     }
 
-    // ---------- EXISTING IMAGES (IMPORTANT) ----------
-    let existingImages = [];
-    if (req.body.existingImages) {
-      existingImages = Array.isArray(req.body.existingImages)
-        ? req.body.existingImages
-        : [req.body.existingImages];
-    }
-
-    // remove null / "null"
-    existingImages = existingImages.filter(
-      (img) => img && img !== "null"
-    );
-
-    // ---------- DELETED IMAGES ----------
-    let deletedImages = [];
+    // 3️⃣ Delete images ONLY if user deleted
     if (req.body.deletedImages) {
-      deletedImages = Array.isArray(req.body.deletedImages)
-        ? req.body.deletedImages
-        : [req.body.deletedImages];
+      const deleted = JSON.parse(req.body.deletedImages);
+      property.images = property.images.filter(
+        (img) => !deleted.includes(img)
+      );
     }
 
-    // keep only images that are not deleted
-    property.images = existingImages.filter(
-      (img) => !deletedImages.includes(img)
-    );
-
-    // ---------- NEW IMAGES (Cloudinary upload) ----------
+    // 4️⃣ Upload new images (ADD only)
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
-        const upload = await cloudinary.uploader.upload(
+        const uploadRes = await cloudinary.uploader.upload(
           `data:${file.mimetype};base64,${file.buffer.toString("base64")}`,
           { folder: "synerzi-properties" }
         );
-        property.images.push(upload.secure_url);
+        property.images.push(uploadRes.secure_url);
       }
     }
-
-    // ---------- OTHER FIELDS ----------
-    Object.keys(req.body).forEach((key) => {
-      if (!["amenities", "existingImages", "deletedImages"].includes(key)) {
-        property[key] = req.body[key];
-      }
-    });
 
     await property.save();
 
@@ -134,11 +118,11 @@ export const updateProperty = async (req, res) => {
       message: "Property updated successfully ✅",
       property,
     });
-
   } catch (err) {
-    console.error("UPDATE PROPERTY ERROR:", err);
+    console.error("UPDATE ERROR:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 
