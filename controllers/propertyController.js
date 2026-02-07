@@ -125,4 +125,30 @@ export const updateProperty = async (req, res) => {
 };
 
 
+// DELETE PROPERTY
+export const deleteProperty = async (req, res) => {
+  try {
+    const property = await Property.findById(req.params.id);
+    if (!property) return res.status(404).json({ message: "Property not found" });
+
+    // Delete all images from Cloudinary
+    if (property.images && property.images.length > 0) {
+      for (const url of property.images) {
+        // Extract public ID from Cloudinary URL
+        const parts = url.split("/");
+        const fileName = parts[parts.length - 1].split(".")[0];
+        await cloudinary.uploader.destroy(`synerzi-properties/${fileName}`);
+      }
+    }
+
+    // Delete property from DB
+    await property.deleteOne();
+
+    res.json({ message: "Property and its images deleted successfully ✅" });
+  } catch (err) {
+    console.error("DELETE PROPERTY ERROR:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 
