@@ -1,3 +1,4 @@
+import cloudinary from "../config/cloudinary.js";
 import Property from "../models/PropertyModel.js";
 import multer from "multer";
 import path from "path";
@@ -25,6 +26,19 @@ export const addProperty = async (req, res) => {
       parsedAmenities = JSON.parse(amenities || "[]");
     } catch {}
 
+    // 🔥 CLOUDINARY IMAGE UPLOAD
+    let imageUrls = [];
+
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const uploadRes = await cloudinary.uploader.upload(
+          `data:${file.mimetype};base64,${file.buffer.toString("base64")}`,
+          { folder: "synerzi-properties" }
+        );
+        imageUrls.push(uploadRes.secure_url);
+      }
+    }
+
     const property = await Property.create({
       title,
       category,
@@ -38,7 +52,7 @@ export const addProperty = async (req, res) => {
       parking,
       description,
       amenities: parsedAmenities,
-      images: [], // 🔥 for now
+      images: imageUrls, // ✅ FIXED
       createdBy: req.admin.id,
     });
 
@@ -56,6 +70,7 @@ export const addProperty = async (req, res) => {
 
 
 
+
 // ================= UPDATE PROPERTY =================
 export const updateProperty = async (req, res) => {
   try {
@@ -64,7 +79,7 @@ export const updateProperty = async (req, res) => {
 
     const fieldsToUpdate = { ...req.body };
 
-    // Parse amenities if sent as JSON string
+    // Parse amenities
     if (fieldsToUpdate.amenities) {
       try {
         fieldsToUpdate.amenities = JSON.parse(fieldsToUpdate.amenities);
@@ -73,46 +88,33 @@ export const updateProperty = async (req, res) => {
       }
     }
 
-    // Handle deleted images (frontend should send array of deleted images)
-    const deletedImages = fieldsToUpdate.deletedImages
-      ? JSON.parse(fieldsToUpdate.deletedImages)
-      : [];
-
-    if (deletedImages.length > 0) {
-      deletedImages.forEach((img) => {
-        const imgPath = path.join(process.cwd(), "uploads", img);
-        if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
-      });
-
-      // Remove deleted images from property.images
-      property.images = property.images.filter((img) => !deletedImages.includes(img));
+    // Handle deleted images (Cloudinary URLs)
+    if (fieldsToUpdate.deletedImages) {
+      const deleted = JSON.parse(fieldsToUpdate.deletedImages);
+      property.images = property.images.filter(img => !deleted.includes(img));
     }
 
-    // Handle existing images from frontend
-    if (fieldsToUpdate.existingImages) {
-      if (typeof fieldsToUpdate.existingImages === "string") {
-        property.images.push(fieldsToUpdate.existingImages);
-      } else if (Array.isArray(fieldsToUpdate.existingImages)) {
-        property.images.push(...fieldsToUpdate.existingImages);
+    // 🔥 Upload new images to Cloudinary
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        const uploadRes = await cloudinary.uploader.upload(
+          `data:${file.mimetype};base64,${file.buffer.toString("base64")}`,
+          { folder: "synerzi-properties" }
+        );
+        property.images.push(uploadRes.secure_url);
       }
     }
 
-    // Handle new uploaded images
-    if (req.files && req.files.length > 0) {
-      const uploadedFiles = req.files.map((file) => file.filename);
-      property.images.push(...uploadedFiles);
-    }
-
-    // Update all other fields
-    const excludeFields = ["deletedImages", "existingImages", "amenities"];
-    Object.keys(fieldsToUpdate).forEach((key) => {
-      if (!excludeFields.includes(key)) {
+    // Update other fields
+    Object.keys(fieldsToUpdate).forEach(key => {
+      if (!["amenities", "deletedImages"].includes(key)) {
         property[key] = fieldsToUpdate[key];
       }
     });
 
-    // Save amenities separately
-    if (fieldsToUpdate.amenities) property.amenities = fieldsToUpdate.amenities;
+    if (fieldsToUpdate.amenities) {
+      property.amenities = fieldsToUpdate.amenities;
+    }
 
     await property.save();
 
