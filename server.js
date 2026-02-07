@@ -21,13 +21,17 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true // if you use cookies or authorization headers
 }));
+// app.use(cors({
+//   origin: true,
+//   credentials: true
+// }));
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
 // 🔥 AUTH ROUTES (MOST IMPORTANT)
 app.use("/api/auth", authRoutes);
-app.use("/api/admin",adminRoutes);
-app.use("/api/properties",propertyRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/properties", propertyRoutes);
 app.use("/api", propertyRoutes);
 
 
