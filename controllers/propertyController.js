@@ -78,8 +78,9 @@ export const updateProperty = async (req, res) => {
     if (!property)
       return res.status(404).json({ message: "Property not found" });
 
-    // 1️⃣ Update normal fields
     const ignoreFields = ["amenities", "deletedImages", "existingImages"];
+
+    // 1️⃣ Update normal fields
     Object.keys(req.body).forEach((key) => {
       if (!ignoreFields.includes(key)) {
         property[key] = req.body[key];
@@ -95,25 +96,22 @@ export const updateProperty = async (req, res) => {
       }
     }
 
-    // 3️⃣ Remove deleted images
+    // 3️⃣ Handle deleted images
     if (req.body.deletedImages) {
       let deleted = [];
       try {
         deleted = JSON.parse(req.body.deletedImages);
-      } catch {
-        deleted = [];
-      }
-
+      } catch {}
+      
       // Remove from property.images
       property.images = property.images.filter((img) => !deleted.includes(img));
 
-      // Remove from Cloudinary
+      // Delete from Cloudinary
       for (const url of deleted) {
-        // Extract public_id from Cloudinary URL
         try {
-          const parts = url.split("/"); // split by /
-          const fileWithExt = parts[parts.length - 1]; // get last segment
-          const publicId = `synerzi-properties/${fileWithExt.split(".")[0]}`;
+          const parts = url.split("/");
+          const fileName = parts[parts.length - 1].split(".")[0];
+          const publicId = `synerzi-properties/${fileName}`;
           await cloudinary.uploader.destroy(publicId);
         } catch (err) {
           console.warn("Failed to delete image from Cloudinary:", url);
@@ -121,16 +119,15 @@ export const updateProperty = async (req, res) => {
       }
     }
 
-    // 4️⃣ Merge existing images (frontend may send existingImages)
+    // 4️⃣ Merge existing images sent from frontend
     if (req.body.existingImages) {
-      if (typeof req.body.existingImages === "string") {
-        if (!property.images.includes(req.body.existingImages))
-          property.images.push(req.body.existingImages);
-      } else if (Array.isArray(req.body.existingImages)) {
-        req.body.existingImages.forEach((img) => {
-          if (!property.images.includes(img)) property.images.push(img);
-        });
-      }
+      const existingImgs = Array.isArray(req.body.existingImages)
+        ? req.body.existingImages
+        : [req.body.existingImages];
+
+      existingImgs.forEach((img) => {
+        if (!property.images.includes(img)) property.images.push(img);
+      });
     }
 
     // 5️⃣ Upload new images
@@ -144,6 +141,7 @@ export const updateProperty = async (req, res) => {
       }
     }
 
+    // 6️⃣ Save updated property
     await property.save();
 
     res.json({ message: "Property updated successfully ✅", property });
@@ -152,6 +150,7 @@ export const updateProperty = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 
 
