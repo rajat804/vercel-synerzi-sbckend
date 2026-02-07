@@ -17,7 +17,7 @@ connectDB();
 
 // Middleware
 app.use(cors({
-  origin: "https://synerzi.vercel.app/",
+  origin: "https://synerzi.vercel.app",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   credentials: true // if you use cookies or authorization headers
 }));
