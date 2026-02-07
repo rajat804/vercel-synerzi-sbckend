@@ -1,5 +1,5 @@
 import express from "express";
-import { addProperty, upload } from "../controllers/propertyController.js";
+import { addProperty, upload , deleteProperty} from "../controllers/propertyController.js";
 import { verifyAdmin } from "../middleware/authMiddleware.js";
 import Property from "../models/PropertyModel.js";
 
@@ -99,27 +99,7 @@ router.put("/:id", verifyAdmin, upload.array("images"), async (req, res) => {
 
 
 /* ================= DELETE PROPERTY ================= */
-router.delete("/:id", verifyAdmin, async (req, res) => {
-  try {
-    const property = await Property.findById(req.params.id);
-    if (!property) return res.status(404).json({ message: "Property not found" });
 
-    // Delete images from server
-    if (property.images && property.images.length > 0) {
-      property.images.forEach((img) => {
-        const imgPath = path.join(process.cwd(), "uploads", img);
-        if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
-      });
-    }
-
-    // Delete property from DB
-    await property.deleteOne();
-
-    res.json({ message: "Property and its images deleted successfully ✅" });
-  } catch (err) {
-    console.error("DELETE PROPERTY ERROR:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
+router.delete("/:id", verifyAdmin, deleteProperty);
 
 export default router;
