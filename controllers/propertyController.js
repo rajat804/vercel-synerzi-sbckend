@@ -88,20 +88,19 @@ export const addProperty = async (req, res) => {
     console.log("REQ.FILES:", req.files);
     console.log("REQ.ADMIN:", req.admin);
 
-    const images = req.files ? req.files.map((file) => file.filename) : [];
+    const images = req.files ? req.files.map(f => f.filename) : [];
 
     const {
       title, category, propertyType, purpose, price,
       city, state, location, area, bhk, bathrooms, balconies,
-      floorNo, totalFloors, facing, parking, description, amenities,
+      floorNo, totalFloors, facing, parking, description, amenities
     } = req.body;
 
-    // Parse amenities safely
     let parsedAmenities = [];
     try {
       parsedAmenities = JSON.parse(amenities || "[]");
     } catch (err) {
-      console.warn("Failed to parse amenities:", err);
+      console.warn("Amenities parse error:", err);
     }
 
     const property = await Property.create({
@@ -124,23 +123,25 @@ export const addProperty = async (req, res) => {
       description,
       amenities: parsedAmenities,
       images,
-      createdBy: req.admin ? req.admin.id : null, // <-- safe now
+      createdBy: req.admin ? req.admin.id : null
     });
 
     res.status(201).json({
       success: true,
       message: "Property added successfully",
-      property,
+      property
     });
+
   } catch (err) {
     console.error("ADD PROPERTY ERROR:", err);
     res.status(500).json({
       success: false,
       message: "Failed to add property",
-      error: err.message,
+      error: err.message
     });
   }
 };
+
 
 // ================= UPDATE PROPERTY =================
 export const updateProperty = async (req, res) => {
