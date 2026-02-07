@@ -79,56 +79,51 @@ export const updateProperty = async (req, res) => {
       return res.status(404).json({ message: "Property not found" });
     }
 
-    /* =======================
-       1️⃣ AMENITIES
-    ======================= */
+    // ---------- AMENITIES ----------
     if (req.body.amenities) {
-      try {
-        property.amenities = JSON.parse(req.body.amenities);
-      } catch (e) {
-        property.amenities = [];
-      }
+      property.amenities = JSON.parse(req.body.amenities);
     }
 
-    /* =======================
-       2️⃣ DELETE OLD IMAGES
-    ======================= */
+    // ---------- EXISTING IMAGES (IMPORTANT) ----------
+    let existingImages = [];
+    if (req.body.existingImages) {
+      existingImages = Array.isArray(req.body.existingImages)
+        ? req.body.existingImages
+        : [req.body.existingImages];
+    }
+
+    // remove null / "null"
+    existingImages = existingImages.filter(
+      (img) => img && img !== "null"
+    );
+
+    // ---------- DELETED IMAGES ----------
+    let deletedImages = [];
     if (req.body.deletedImages) {
-      let deleted = [];
-
-      try {
-        deleted = JSON.parse(req.body.deletedImages);
-      } catch {
-        deleted = [];
-      }
-
-      property.images = property.images.filter(
-        (img) => !deleted.includes(img)
-      );
+      deletedImages = Array.isArray(req.body.deletedImages)
+        ? req.body.deletedImages
+        : [req.body.deletedImages];
     }
 
-    /* =======================
-       3️⃣ UPLOAD NEW IMAGES
-    ======================= */
+    // keep only images that are not deleted
+    property.images = existingImages.filter(
+      (img) => !deletedImages.includes(img)
+    );
+
+    // ---------- NEW IMAGES (Cloudinary upload) ----------
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
-        const uploadRes = await cloudinary.uploader.upload(
+        const upload = await cloudinary.uploader.upload(
           `data:${file.mimetype};base64,${file.buffer.toString("base64")}`,
           { folder: "synerzi-properties" }
         );
-
-        property.images.push(uploadRes.secure_url);
+        property.images.push(upload.secure_url);
       }
     }
 
-    /* =======================
-       4️⃣ UPDATE NORMAL FIELDS
-       (IMPORTANT FIX)
-    ======================= */
-    const blockedFields = ["amenities", "deletedImages", "images"];
-
+    // ---------- OTHER FIELDS ----------
     Object.keys(req.body).forEach((key) => {
-      if (!blockedFields.includes(key)) {
+      if (!["amenities", "existingImages", "deletedImages"].includes(key)) {
         property[key] = req.body[key];
       }
     });
@@ -136,13 +131,14 @@ export const updateProperty = async (req, res) => {
     await property.save();
 
     res.json({
-      success: true,
       message: "Property updated successfully ✅",
       property,
     });
+
   } catch (err) {
     console.error("UPDATE PROPERTY ERROR:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
