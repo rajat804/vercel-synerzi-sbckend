@@ -1,20 +1,11 @@
 import express from "express";
-import fs from "fs";
-import path from "path";
-import { addProperty } from "../controllers/propertyController.js";
+import { addProperty, upload } from "../controllers/propertyController.js";
 import { verifyAdmin } from "../middleware/authMiddleware.js";
 import Property from "../models/PropertyModel.js";
-import multer from "multer";
 
 const router = express.Router();
 
-/* ================= MULTER SETUP ================= */
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "uploads/"),
-  filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
-});
 
-const upload = multer({ storage });
 
 /* ================= ADD PROPERTY ================= */
 router.post("/add", verifyAdmin, upload.array("images", 10), addProperty);
