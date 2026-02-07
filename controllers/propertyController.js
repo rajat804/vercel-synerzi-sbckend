@@ -84,16 +84,15 @@ export const updateProperty = async (req, res) => {
       }
     });
 
-    // 2️⃣ Amenities
-    if (req.body.amenities) {
-      property.amenities = JSON.parse(req.body.amenities);
-    }
+    // 2️⃣ Update amenities
+    if (req.body.amenities) property.amenities = JSON.parse(req.body.amenities);
 
-    // 3️⃣ Remove deleted images from Cloudinary
+    // 3️⃣ Remove deleted images from property and Cloudinary
     if (req.body.deletedImages) {
       const deleted = JSON.parse(req.body.deletedImages);
-      property.images = property.images.filter(img => !deleted.includes(img));
+      property.images = property.images.filter((img) => !deleted.includes(img));
 
+      // delete from Cloudinary
       for (const url of deleted) {
         const parts = url.split("/");
         const fileName = parts[parts.length - 1].split(".")[0];
@@ -101,12 +100,12 @@ export const updateProperty = async (req, res) => {
       }
     }
 
-    // 4️⃣ Keep existing images
+    // 4️⃣ Add existing images again (so they are kept)
     if (req.body.existingImages) {
       if (typeof req.body.existingImages === "string") {
-        property.images = [req.body.existingImages, ...property.images];
+        property.images = [...property.images, req.body.existingImages];
       } else {
-        property.images = [...req.body.existingImages, ...property.images];
+        property.images = [...property.images, ...req.body.existingImages];
       }
     }
 
@@ -123,12 +122,12 @@ export const updateProperty = async (req, res) => {
 
     await property.save();
     res.json({ message: "Property updated successfully ✅", property });
-
   } catch (err) {
     console.error("UPDATE PROPERTY ERROR:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 
 
