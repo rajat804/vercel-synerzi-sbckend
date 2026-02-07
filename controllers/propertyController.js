@@ -3,17 +3,7 @@ import multer from "multer";
 import path from "path";
 
 /* ===== MULTER SETUP ===== */
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/");
-  },
-  filename: (req, file, cb) => {
-    cb(
-      null,
-      Date.now() + "-" + Math.round(Math.random() * 1e9) + path.extname(file.originalname)
-    );
-  },
-});
+const storage = multer.memoryStorage();
 
 export const upload = multer({
   storage,
@@ -21,92 +11,23 @@ export const upload = multer({
 });
 
 /* ===== ADD PROPERTY ===== */
-// export const addProperty = async (req, res) => {
-//   try {
-//     const images = req.files.map((file) => file.filename);
 
-//     const {
-//       title,
-//       category,
-//       propertyType,
-//       purpose,
-//       price,
-//       city,
-//       state,
-//       location,
-//       area,
-//       bhk,
-//       bathrooms,
-//       balconies,
-//       floorNo,
-//       totalFloors,
-//       facing,
-//       parking,
-//       description,
-//       amenities,
-//     } = req.body;
-
-//     const property = await Property.create({
-//       title,
-//       category,
-//       propertyType,
-//       purpose,
-//       price,
-//       city,
-//       state,
-//       location,
-//       area,
-//       bhk,
-//       bathrooms,
-//       balconies,
-//       floorNo,
-//       totalFloors,
-//       facing,
-//       parking,
-//       description,
-//       amenities: JSON.parse(amenities || "[]"),
-//       images,
-//       createdBy: req.admin.id,
-//     });
-
-//     res.status(201).json({
-//       success: true,
-//       message: "Property added successfully",
-//       property,
-//     });
-//   } catch (err) {
-//     res.status(500).json({
-//       success: false,
-//       message: "Failed to add property",
-//       error: err.message,
-//     });
-//   }
-// };
 export const addProperty = async (req, res) => {
   try {
-    console.log("REQ.BODY:", req.body);
-    console.log("REQ.FILES:", req.files);
-    console.log("REQ.ADMIN:", req.admin);
-
-    const images = req.files ? req.files.map(f => f.filename) : [];
-
     const {
-      title, category, propertyType, purpose, price,
-      city, state, location, area, bhk, bathrooms, balconies,
-      floorNo, totalFloors, facing, parking, description, amenities
+      title, category, purpose, price,
+      city, state, location, area,
+      bhk, parking, description, amenities
     } = req.body;
 
     let parsedAmenities = [];
     try {
       parsedAmenities = JSON.parse(amenities || "[]");
-    } catch (err) {
-      console.warn("Amenities parse error:", err);
-    }
+    } catch {}
 
     const property = await Property.create({
       title,
       category,
-      propertyType,
       purpose,
       price,
       city,
@@ -114,33 +35,25 @@ export const addProperty = async (req, res) => {
       location,
       area,
       bhk,
-      bathrooms,
-      balconies,
-      floorNo,
-      totalFloors,
-      facing,
       parking,
       description,
       amenities: parsedAmenities,
-      images,
-      createdBy: req.admin ? req.admin.id : null
+      images: [], // 🔥 for now
+      createdBy: req.admin.id,
     });
 
     res.status(201).json({
       success: true,
       message: "Property added successfully",
-      property
+      property,
     });
 
   } catch (err) {
     console.error("ADD PROPERTY ERROR:", err);
-    res.status(500).json({
-      success: false,
-      message: "Failed to add property",
-      error: err.message
-    });
+    res.status(500).json({ message: err.message });
   }
 };
+
 
 
 // ================= UPDATE PROPERTY =================
