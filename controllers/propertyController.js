@@ -75,53 +75,74 @@ export const addProperty = async (req, res) => {
 export const updateProperty = async (req, res) => {
   try {
     const property = await Property.findById(req.params.id);
-    if (!property) return res.status(404).json({ message: "Property not found" });
+    if (!property) {
+      return res.status(404).json({ message: "Property not found" });
+    }
 
-    const fieldsToUpdate = { ...req.body };
-
-    // Parse amenities
-    if (fieldsToUpdate.amenities) {
+    /* =======================
+       1️⃣ AMENITIES
+    ======================= */
+    if (req.body.amenities) {
       try {
-        fieldsToUpdate.amenities = JSON.parse(fieldsToUpdate.amenities);
-      } catch {
-        fieldsToUpdate.amenities = [];
+        property.amenities = JSON.parse(req.body.amenities);
+      } catch (e) {
+        property.amenities = [];
       }
     }
 
-    // Handle deleted images (Cloudinary URLs)
-    if (fieldsToUpdate.deletedImages) {
-      const deleted = JSON.parse(fieldsToUpdate.deletedImages);
-      property.images = property.images.filter(img => !deleted.includes(img));
+    /* =======================
+       2️⃣ DELETE OLD IMAGES
+    ======================= */
+    if (req.body.deletedImages) {
+      let deleted = [];
+
+      try {
+        deleted = JSON.parse(req.body.deletedImages);
+      } catch {
+        deleted = [];
+      }
+
+      property.images = property.images.filter(
+        (img) => !deleted.includes(img)
+      );
     }
 
-    // 🔥 Upload new images to Cloudinary
+    /* =======================
+       3️⃣ UPLOAD NEW IMAGES
+    ======================= */
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
         const uploadRes = await cloudinary.uploader.upload(
           `data:${file.mimetype};base64,${file.buffer.toString("base64")}`,
           { folder: "synerzi-properties" }
         );
+
         property.images.push(uploadRes.secure_url);
       }
     }
 
-    // Update other fields
-    Object.keys(fieldsToUpdate).forEach(key => {
-      if (!["amenities", "deletedImages"].includes(key)) {
-        property[key] = fieldsToUpdate[key];
+    /* =======================
+       4️⃣ UPDATE NORMAL FIELDS
+       (IMPORTANT FIX)
+    ======================= */
+    const blockedFields = ["amenities", "deletedImages", "images"];
+
+    Object.keys(req.body).forEach((key) => {
+      if (!blockedFields.includes(key)) {
+        property[key] = req.body[key];
       }
     });
 
-    if (fieldsToUpdate.amenities) {
-      property.amenities = fieldsToUpdate.amenities;
-    }
-
     await property.save();
 
-    res.json({ message: "Property updated successfully ✅", property });
-
+    res.json({
+      success: true,
+      message: "Property updated successfully ✅",
+      property,
+    });
   } catch (err) {
     console.error("UPDATE PROPERTY ERROR:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
