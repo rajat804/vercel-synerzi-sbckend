@@ -25,7 +25,14 @@ const propertySchema = new mongoose.Schema(
     amenities: [String],
 
     images: [String], // image paths
-
+    isFeatured: {
+      type: Boolean,
+      default: false,
+    },
+    isLatest: {
+      type: Boolean,
+      default: false,
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Admin",
