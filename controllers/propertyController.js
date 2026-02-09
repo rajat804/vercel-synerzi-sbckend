@@ -78,12 +78,22 @@ export const updateProperty = async (req, res) => {
     if (!property)
       return res.status(404).json({ message: "Property not found" });
 
-    const ignoreFields = ["amenities", "deletedImages", "existingImages"];
+    const ignoreFields = [
+      "amenities",
+      "deletedImages",
+      "existingImages",
+    ];
 
-    // 1️⃣ Update normal fields
+    // 1️⃣ Update normal fields (INCLUDING featured & latest)
     Object.keys(req.body).forEach((key) => {
       if (!ignoreFields.includes(key)) {
-        property[key] = req.body[key];
+
+        // ✅ handle checkbox boolean values
+        if (key === "isFeatured" || key === "isLatest") {
+          property[key] = req.body[key] === "true" || req.body[key] === true;
+        } else {
+          property[key] = req.body[key];
+        }
       }
     });
 
@@ -102,11 +112,11 @@ export const updateProperty = async (req, res) => {
       try {
         deleted = JSON.parse(req.body.deletedImages);
       } catch {}
-      
-      // Remove from property.images
-      property.images = property.images.filter((img) => !deleted.includes(img));
 
-      // Delete from Cloudinary
+      property.images = property.images.filter(
+        (img) => !deleted.includes(img)
+      );
+
       for (const url of deleted) {
         try {
           const parts = url.split("/");
@@ -119,14 +129,16 @@ export const updateProperty = async (req, res) => {
       }
     }
 
-    // 4️⃣ Merge existing images sent from frontend
+    // 4️⃣ Merge existing images
     if (req.body.existingImages) {
       const existingImgs = Array.isArray(req.body.existingImages)
         ? req.body.existingImages
         : [req.body.existingImages];
 
       existingImgs.forEach((img) => {
-        if (!property.images.includes(img)) property.images.push(img);
+        if (!property.images.includes(img)) {
+          property.images.push(img);
+        }
       });
     }
 
@@ -141,15 +153,19 @@ export const updateProperty = async (req, res) => {
       }
     }
 
-    // 6️⃣ Save updated property
+    // 6️⃣ Save
     await property.save();
 
-    res.json({ message: "Property updated successfully ✅", property });
+    res.json({
+      message: "Property updated successfully ✅",
+      property,
+    });
   } catch (err) {
     console.error("UPDATE PROPERTY ERROR:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 
 
