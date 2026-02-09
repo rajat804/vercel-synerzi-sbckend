@@ -41,6 +41,32 @@ router.get("/search", async (req, res) => {
   }
 });
 
+
+router.get("/category/:category", async (req, res) => {
+  try {
+    const category = req.params.category;
+
+    const categoryMap = {
+      commercial: "Commercial",
+      residential: "Residential",
+      office: "Office Space",
+      retail: "Retail Shop",
+      warehouse: "Warehouse",
+    };
+
+    const properties = await Property.find({
+      category: categoryMap[category],
+    });
+
+    res.json(properties);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+
+
 /* ================= GET PROPERTY BY ID ================= */
 router.get("/:id", async (req, res) => {
   try {
