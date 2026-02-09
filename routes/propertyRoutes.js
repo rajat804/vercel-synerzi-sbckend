@@ -20,6 +20,26 @@ router.get("/properties", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+/* ================= SEARCH PROPERTIES ================= */
+router.get("/search", async (req, res) => {
+  try {
+    const { purpose, category, city, location } = req.query;
+
+    let filter = {};
+
+    if (purpose) filter.purpose = purpose;
+    if (category) filter.category = category;
+    if (city) filter.city = new RegExp(city, "i");
+    if (location) filter.location = new RegExp(location, "i");
+
+    const properties = await Property.find(filter).sort({ createdAt: -1 });
+
+    res.status(200).json(properties); // 👈 ALWAYS ARRAY
+  } catch (err) {
+    console.error(err);
+    res.status(200).json([]); // 👈 never send object
+  }
+});
 
 /* ================= GET PROPERTY BY ID ================= */
 router.get("/:id", async (req, res) => {
@@ -32,25 +52,7 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
-/* ================= SEARCH PROPERTIES ================= */
-router.get("/search", async (req, res) => {
-  try {
-    const { purpose, category, city, location } = req.query;
 
-    let filter = {};
-
-    if (purpose) filter.purpose = purpose;
-    if (category) filter.category = category;
-    if (city) filter.city = { $regex: city, $options: "i" };
-    if (location) filter.location = { $regex: location, $options: "i" };
-
-    const properties = await Property.find(filter).sort({ createdAt: -1 });
-
-    res.json(properties);
-  } catch (err) {
-    res.status(500).json({ message: "Search failed" });
-  }
-});
 
 /* ================= UPDATE PROPERTY ================= */
 router.put("/:id", verifyAdmin, upload.array("images"), updateProperty);
