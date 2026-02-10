@@ -59,6 +59,8 @@ app.use("/uploads", express.static("uploads"));
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/properties", propertyRoutes);
+app.use("/api",propertyRoutes);
+
 
 /* ==============================
    TEST ROUTE
