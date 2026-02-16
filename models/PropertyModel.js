@@ -2,29 +2,57 @@ import mongoose from "mongoose";
 
 const propertySchema = new mongoose.Schema(
   {
+    /* ================= BASIC INFO ================= */
     title: { type: String, required: true },
+    description: { type: String },
+
     category: { type: String },
     propertyType: { type: String },
     purpose: { type: String },
-    price: { type: String, required: true },
+    status: { type: String }, // Hot Offer, New Offer
 
+    /* ================= PRICE ================= */
+    price: { type: String, required: true },
+    priceLabel: { type: String }, // /month
+
+    /* ================= LOCATION ================= */
+    address: { type: String },
     city: { type: String, required: true },
-    state: { type: String, required: true },
+    // state: { type: String, required: true },
     location: { type: String },
     area: { type: String },
+    pincode: { type: String },
+    country: { type: String, default: "India" },
 
-    bhk: String,
-    bathrooms: String,
-    balconies: String,
-    floorNo: String,
-    totalFloors: String,
-    facing: String,
-    parking: String,
+    /* ================= PROPERTY DETAILS ================= */
+    size: { type: String },
+    builtUpArea: { type: String },
+    yearBuilt: { type: String },
+    flooring: { type: String },
+    ownership: { type: String },
+    possession: { type: String },
+    structureType: { type: String },
+    roadWidth: { type: String },
+    openSides: { type: String },
 
-    description: String,
-    amenities: [String],
+    /* ================= BUILDING INFO ================= */
+    totalFloors: { type: String },
+    floorNo: { type: String },
 
-    images: [String], // image paths
+    /* ================= ROOM DETAILS ================= */
+    bhk: { type: String },
+    bathrooms: { type: String },
+    balconies: { type: String },
+    facing: { type: String },
+    parking: { type: String },
+
+    /* ================= FEATURES ================= */
+    amenities: [{ type: String }],
+
+    /* ================= MEDIA ================= */
+    images: [{ type: String }],
+
+    /* ================= FLAGS ================= */
     isFeatured: {
       type: Boolean,
       default: false,
@@ -33,6 +61,8 @@ const propertySchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    /* ================= RELATION ================= */
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Admin",
@@ -42,4 +72,5 @@ const propertySchema = new mongoose.Schema(
 );
 
 const Property = mongoose.model("Property", propertySchema);
+
 export default Property;
