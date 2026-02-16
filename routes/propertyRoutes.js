@@ -41,28 +41,39 @@ router.get("/search", async (req, res) => {
   }
 });
 
-
 router.get("/category/:category", async (req, res) => {
   try {
-    const category = req.params.category;
+    const categoryParam = req.params.category.toLowerCase(); // e.g., "dareshell", "furnished"
 
+    // Map URL slug to actual Property.category value in DB
     const categoryMap = {
-      commercial: "Commercial",
-      residential: "Residential",
-      office: "Office Space",
-      retail: "Retail Shop",
+      commercial: "Commercial Property",
+      dareshell: "Dareshell Property",
+      furnished: "Furnished",
+      "industrial-plot": "Industrial Plot",
+      plot: "Plot",
+      shed: "Shed",
       warehouse: "Warehouse",
+      factory: "Factory",
+      latestproperty: "Latest Property",
+      featuredproperty: "Featured",
     };
 
-    const properties = await Property.find({
-      category: categoryMap[category],
-    });
+    const categoryName = categoryMap[categoryParam];
+
+    if (!categoryName) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    const properties = await Property.find({ category: categoryName });
 
     res.json(properties);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 });
+
 
 
 
