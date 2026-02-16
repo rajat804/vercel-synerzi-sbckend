@@ -13,46 +13,128 @@ export const upload = multer({
 
 /* ===== ADD PROPERTY ===== */
 
+
 export const addProperty = async (req, res) => {
   try {
+    console.log("BODY:", req.body);
+    console.log("FILES:", req.files);
+
     const {
-      title, category, purpose, price,
-      city, state, location, area,
-      bhk, parking, description, amenities
+      title,
+      description,
+      category,
+      propertyType,
+      purpose,
+      status,
+      price,
+      priceLabel,
+      address,
+      city,
+      location,
+      area,
+      pincode,
+      country,
+      size,
+      builtUpArea,
+      yearBuilt,
+      flooring,
+      ownership,
+      possession,
+      structureType,
+      roadWidth,
+      openSides,
+      totalFloors,
+      floorNo,
+      bhk,
+      bathrooms,
+      balconies,
+      facing,
+      parking,
+      amenities,
+      isFeatured,
+      isLatest
     } = req.body;
 
-    let parsedAmenities = [];
-    try {
-      parsedAmenities = JSON.parse(amenities || "[]");
-    } catch { }
+    // ================= VALIDATION =================
+    if (!title || !city) {
+      return res.status(400).json({
+        success: false,
+        message: "Title and City are required",
+      });
+    }
 
-    // 🔥 CLOUDINARY IMAGE UPLOAD
+    if (!req.admin || !req.admin.id) {
+      return res.status(401).json({
+        success: false,
+        message: "Admin not authenticated",
+      });
+    }
+
+    // ================= AMENITIES PARSE =================
+    let parsedAmenities = [];
+    if (amenities) {
+      try {
+        parsedAmenities =
+          typeof amenities === "string"
+            ? JSON.parse(amenities)
+            : amenities;
+      } catch (err) {
+        console.log("Amenities parse error");
+      }
+    }
+
+    // ================= IMAGE UPLOAD =================
     let imageUrls = [];
 
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
         const uploadRes = await cloudinary.uploader.upload(
           `data:${file.mimetype};base64,${file.buffer.toString("base64")}`,
-          { folder: "synerzi-properties" }
+          {
+            folder: "synerzi-properties",
+          }
         );
+
         imageUrls.push(uploadRes.secure_url);
       }
     }
 
+    // ================= CREATE PROPERTY =================
     const property = await Property.create({
       title,
+      description,
       category,
+      propertyType,
       purpose,
+      status,
       price,
+      priceLabel,
+      address,
       city,
-      state,
       location,
       area,
+      pincode,
+      country,
+      size,
+      builtUpArea,
+      yearBuilt,
+      flooring,
+      ownership,
+      possession,
+      structureType,
+      roadWidth,
+      openSides,
+      totalFloors,
+      floorNo,
       bhk,
+      bathrooms,
+      balconies,
+      facing,
       parking,
-      description,
       amenities: parsedAmenities,
-      images: imageUrls, // ✅ FIXED
+      images: imageUrls,
+      isFeatured: isFeatured === "true" || isFeatured === true,
+      isLatest: isLatest === "true" || isLatest === true,
       createdBy: req.admin.id,
     });
 
@@ -64,9 +146,13 @@ export const addProperty = async (req, res) => {
 
   } catch (err) {
     console.error("ADD PROPERTY ERROR:", err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
+
 
 
 
