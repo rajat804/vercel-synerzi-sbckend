@@ -18,7 +18,6 @@ const propertySchema = new mongoose.Schema(
     /* ================= LOCATION ================= */
     address: { type: String },
     city: { type: String, required: true },
-    // state: { type: String, required: true },
     location: { type: String },
     area: { type: String },
     pincode: { type: String },
