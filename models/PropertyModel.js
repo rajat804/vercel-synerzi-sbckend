@@ -10,9 +10,9 @@ const propertySchema = new mongoose.Schema(
     propertyType: { type: String },
     purpose: { type: String },
     status: { type: String }, // Hot Offer, New Offer
-
+    state:{type: String, default: false},
     /* ================= PRICE ================= */
-    price: { type: String, required: true },
+    price: { type: String},
     priceLabel: { type: String }, // /month
 
     /* ================= LOCATION ================= */
