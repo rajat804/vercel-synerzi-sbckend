@@ -47,15 +47,15 @@ router.get("/category/:category", async (req, res) => {
 
     // Map URL slug to actual Property.category value in DB
     const categoryMap = {
-      commercial: "Commercial Property",
-      dareshell: "Dareshell Property",
+      commercial: "Commercial",
+      dareshell: "Dareshell",
       furnished: "Furnished",
       "industrial-plot": "Industrial Plot",
       plot: "Plot",
       shed: "Shed",
       warehouse: "Warehouse",
       factory: "Factory",
-      latestproperty: "Latest Property",
+      latestproperty: "Latest",
       featuredproperty: "Featured",
     };
 
