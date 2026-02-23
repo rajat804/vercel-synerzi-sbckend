@@ -5,27 +5,28 @@ import Property from "../models/PropertyModel.js";
 
 const router = express.Router();
 
-
-
 /* ================= ADD PROPERTY ================= */
-router.post("/add", verifyAdmin, upload.array("images", 10), addProperty);
+// Jab koi bhi add kare -> default false hona chahiye (Model me set hoga)
+router.post("/add", upload.array("images", 10), addProperty);
 
-/* ================= GET ALL PROPERTIES ================= */
+
+/* ================= GET ALL PROPERTIES (ONLY APPROVED) ================= */
 router.get("/properties", async (req, res) => {
   try {
-    const properties = await Property.find();
+    const properties = await Property.find({ isApproved: true });
     res.status(200).json(properties);
   } catch (err) {
-    console.error("GET PROPERTIES ERROR:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
-/* ================= SEARCH PROPERTIES ================= */
+
+
+/* ================= SEARCH PROPERTIES (ONLY APPROVED) ================= */
 router.get("/search", async (req, res) => {
   try {
     const { purpose, category, city, location } = req.query;
 
-    let filter = {};
+    let filter = { isApproved: true };  // 👈 IMPORTANT
 
     if (purpose) filter.purpose = purpose;
     if (category) filter.category = category;
@@ -34,18 +35,19 @@ router.get("/search", async (req, res) => {
 
     const properties = await Property.find(filter).sort({ createdAt: -1 });
 
-    res.status(200).json(properties); // 👈 ALWAYS ARRAY
+    res.status(200).json(properties);
   } catch (err) {
     console.error(err);
-    res.status(200).json([]); // 👈 never send object
+    res.status(200).json([]);
   }
 });
 
+
+/* ================= CATEGORY (ONLY APPROVED) ================= */
 router.get("/category/:category", async (req, res) => {
   try {
-    const categoryParam = req.params.category.toLowerCase(); // e.g., "dareshell", "furnished"
+    const categoryParam = req.params.category.toLowerCase();
 
-    // Map URL slug to actual Property.category value in DB
     const categoryMap = {
       commercial: "Commercial",
       dareshell: "Dareshell",
@@ -65,7 +67,10 @@ router.get("/category/:category", async (req, res) => {
       return res.status(404).json({ message: "Category not found" });
     }
 
-    const properties = await Property.find({ category: categoryName });
+    const properties = await Property.find({ 
+      category: categoryName,
+      isApproved: true   // 👈 IMPORTANT
+    });
 
     res.json(properties);
   } catch (error) {
@@ -74,15 +79,37 @@ router.get("/category/:category", async (req, res) => {
   }
 });
 
+/* ================= ADMIN GET PROPERTY BY ID ================= */
+// 👇 YE YAHAN ADD KARO
+router.get("/admin/:id", verifyAdmin, async (req, res) => {
+  try {
+    const property = await Property.findById(req.params.id);
 
+    if (!property) {
+      return res.status(404).json({ message: "Property not found" });
+    }
+
+    res.status(200).json(property);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 
 
 /* ================= GET PROPERTY BY ID ================= */
+// Website ke liye sirf approved property
 router.get("/:id", async (req, res) => {
   try {
-    const property = await Property.findById(req.params.id);
-    if (!property) return res.status(404).json({ message: "Property not found" });
+    const property = await Property.findOne({
+      _id: req.params.id,
+      isApproved: true   // 👈 IMPORTANT
+    });
+
+    if (!property) {
+      return res.status(404).json({ message: "Property not approved yet" });
+    }
+
     res.status(200).json(property);
   } catch (err) {
     console.error("GET PROPERTY ERROR:", err);
@@ -92,11 +119,11 @@ router.get("/:id", async (req, res) => {
 
 
 /* ================= UPDATE PROPERTY ================= */
-router.put("/:id", verifyAdmin, upload.array("images"), updateProperty);
+// Admin edit karega aur approve karega
+router.put("/:id", upload.array("images"), updateProperty);
 
 
 /* ================= DELETE PROPERTY ================= */
-
 router.delete("/:id", verifyAdmin, deleteProperty);
 
 export default router;
