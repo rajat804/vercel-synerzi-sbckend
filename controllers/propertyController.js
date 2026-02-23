@@ -63,12 +63,12 @@ export const addProperty = async (req, res) => {
       });
     }
 
-    if (!req.admin || !req.admin.id) {
-      return res.status(401).json({
-        success: false,
-        message: "Admin not authenticated",
-      });
-    }
+    // if (!req.admin || !req.admin.id) {
+    //   return res.status(401).json({
+    //     success: false,
+    //     message: "Admin not authenticated",
+    //   });
+    // }
 
     // ================= AMENITIES PARSE =================
     let parsedAmenities = [];
@@ -135,7 +135,7 @@ export const addProperty = async (req, res) => {
       images: imageUrls,
       isFeatured: isFeatured === "true" || isFeatured === true,
       isLatest: isLatest === "true" || isLatest === true,
-      createdBy: req.admin.id,
+      
     });
 
     res.status(201).json({
