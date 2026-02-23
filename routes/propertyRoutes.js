@@ -97,6 +97,18 @@ router.get("/admin/:id", verifyAdmin, async (req, res) => {
 
 
 
+
+
+
+/* ================= UPDATE PROPERTY ================= */
+// Admin edit karega aur approve karega
+router.put("/:id", upload.array("images"), updateProperty);
+
+
+/* ================= DELETE PROPERTY ================= */
+router.delete("/:id", verifyAdmin, deleteProperty);
+
+
 /* ================= GET PROPERTY BY ID ================= */
 // Website ke liye sirf approved property
 router.get("/:id", async (req, res) => {
@@ -116,14 +128,5 @@ router.get("/:id", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
-
-
-/* ================= UPDATE PROPERTY ================= */
-// Admin edit karega aur approve karega
-router.put("/:id", upload.array("images"), updateProperty);
-
-
-/* ================= DELETE PROPERTY ================= */
-router.delete("/:id", verifyAdmin, deleteProperty);
 
 export default router;
