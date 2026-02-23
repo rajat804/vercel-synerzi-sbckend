@@ -11,7 +11,7 @@ const propertySchema = new mongoose.Schema(
     purpose: { type: String },
     status: { type: String }, // Hot Offer, New Offer
     /* ================= PRICE ================= */
-    price: { type: String},
+    price: { type: String },
     priceLabel: { type: String }, // /month
 
     /* ================= LOCATION ================= */
@@ -65,6 +65,10 @@ const propertySchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Admin",
     },
+    isApproved: {
+      type: Boolean,
+      default: false,
+    }
   },
   { timestamps: true }
 );
