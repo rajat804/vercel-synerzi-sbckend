@@ -91,6 +91,23 @@ router.get("/admin/all", async (req, res) => {
 });
 
 
+/* ADMIN GET PROPERTY BY ID */
+router.get("/admin/:id", async (req, res) => {
+  try {
+    const property = await Property.findById(req.params.id);
+
+    if (!property) {
+      return res.status(404).json({ message: "Property not found" });
+    }
+
+    res.status(200).json(property);
+  } catch (err) {
+    console.error("ADMIN GET ERROR:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
 /* ================= UPDATE PROPERTY ================= */
 // Admin edit karega aur approve karega
 router.put("/:id", upload.array("images"), updateProperty);
