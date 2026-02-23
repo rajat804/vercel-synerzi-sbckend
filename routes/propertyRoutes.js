@@ -1,32 +1,39 @@
 import express from "express";
-import { addProperty, upload , deleteProperty, updateProperty} from "../controllers/propertyController.js";
+import {
+  addProperty,
+  upload,
+  deleteProperty,
+  updateProperty,
+} from "../controllers/propertyController.js";
+
 import { verifyAdmin } from "../middleware/authMiddleware.js";
 import Property from "../models/PropertyModel.js";
 
 const router = express.Router();
 
 /* ================= ADD PROPERTY ================= */
-// Jab koi bhi add kare -> default false hona chahiye (Model me set hoga)
+// Anyone can add (default isApproved: false in model)
 router.post("/add", upload.array("images", 10), addProperty);
 
 
-/* ================= GET ALL PROPERTIES (ONLY APPROVED) ================= */
+/* ================= GET ALL APPROVED PROPERTIES (WEBSITE) ================= */
 router.get("/properties", async (req, res) => {
   try {
-    const properties = await Property.find({ isApproved: true });
+    const properties = await Property.find({ isApproved: true }).sort({ createdAt: -1 });
     res.status(200).json(properties);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
 
-/* ================= SEARCH PROPERTIES (ONLY APPROVED) ================= */
+/* ================= SEARCH (ONLY APPROVED) ================= */
 router.get("/search", async (req, res) => {
   try {
     const { purpose, category, city, location } = req.query;
 
-    let filter = { isApproved: true };  // 👈 IMPORTANT
+    let filter = { isApproved: true };
 
     if (purpose) filter.purpose = purpose;
     if (category) filter.category = category;
@@ -67,20 +74,31 @@ router.get("/category/:category", async (req, res) => {
       return res.status(404).json({ message: "Category not found" });
     }
 
-    const properties = await Property.find({ 
+    const properties = await Property.find({
       category: categoryName,
-      isApproved: true   // 👈 IMPORTANT
+      isApproved: true,
     });
 
-    res.json(properties);
+    res.status(200).json(properties);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-/* ================= ADMIN GET PROPERTY BY ID ================= */
-// 👇 YE YAHAN ADD KARO
+
+/* ================= ADMIN: GET ALL PROPERTIES ================= */
+router.get("/admin/all", verifyAdmin, async (req, res) => {
+  try {
+    const properties = await Property.find().sort({ createdAt: -1 });
+    res.status(200).json(properties);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+/* ================= ADMIN: GET PROPERTY BY ID ================= */
 router.get("/admin/:id", verifyAdmin, async (req, res) => {
   try {
     const property = await Property.findById(req.params.id);
@@ -96,26 +114,21 @@ router.get("/admin/:id", verifyAdmin, async (req, res) => {
 });
 
 
+/* ================= UPDATE PROPERTY (ADMIN) ================= */
+router.put("/:id", verifyAdmin, upload.array("images"), updateProperty);
 
 
-
-
-/* ================= UPDATE PROPERTY ================= */
-// Admin edit karega aur approve karega
-router.put("/:id", upload.array("images"), updateProperty);
-
-
-/* ================= DELETE PROPERTY ================= */
+/* ================= DELETE PROPERTY (ADMIN) ================= */
 router.delete("/:id", verifyAdmin, deleteProperty);
 
 
-/* ================= GET PROPERTY BY ID ================= */
-// Website ke liye sirf approved property
+/* ================= WEBSITE: GET PROPERTY BY ID ================= */
+/* ⚠️ KEEP THIS LAST (Dynamic Route) */
 router.get("/:id", async (req, res) => {
   try {
     const property = await Property.findOne({
       _id: req.params.id,
-      isApproved: true   // 👈 IMPORTANT
+      isApproved: true,
     });
 
     if (!property) {
@@ -124,7 +137,7 @@ router.get("/:id", async (req, res) => {
 
     res.status(200).json(property);
   } catch (err) {
-    console.error("GET PROPERTY ERROR:", err);
+    console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 });
