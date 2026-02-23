@@ -1,39 +1,32 @@
 import express from "express";
-import {
-  addProperty,
-  upload,
-  deleteProperty,
-  updateProperty,
-} from "../controllers/propertyController.js";
-
+import { addProperty, upload , deleteProperty, updateProperty} from "../controllers/propertyController.js";
 import { verifyAdmin } from "../middleware/authMiddleware.js";
 import Property from "../models/PropertyModel.js";
 
 const router = express.Router();
 
 /* ================= ADD PROPERTY ================= */
-// Anyone can add (default isApproved: false in model)
+// Jab koi bhi add kare -> default false hona chahiye (Model me set hoga)
 router.post("/add", upload.array("images", 10), addProperty);
 
 
-/* ================= GET ALL APPROVED PROPERTIES (WEBSITE) ================= */
+/* ================= GET ALL PROPERTIES (ONLY APPROVED) ================= */
 router.get("/properties", async (req, res) => {
   try {
-    const properties = await Property.find({ isApproved: true }).sort({ createdAt: -1 });
+    const properties = await Property.find({ isApproved: true });
     res.status(200).json(properties);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
 
-/* ================= SEARCH (ONLY APPROVED) ================= */
+/* ================= SEARCH PROPERTIES (ONLY APPROVED) ================= */
 router.get("/search", async (req, res) => {
   try {
     const { purpose, category, city, location } = req.query;
 
-    let filter = { isApproved: true };
+    let filter = { isApproved: true };  // 👈 IMPORTANT
 
     if (purpose) filter.purpose = purpose;
     if (category) filter.category = category;
@@ -74,12 +67,12 @@ router.get("/category/:category", async (req, res) => {
       return res.status(404).json({ message: "Category not found" });
     }
 
-    const properties = await Property.find({
+    const properties = await Property.find({ 
       category: categoryName,
-      isApproved: true,
+      isApproved: true   // 👈 IMPORTANT
     });
 
-    res.status(200).json(properties);
+    res.json(properties);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
@@ -87,8 +80,8 @@ router.get("/category/:category", async (req, res) => {
 });
 
 
-/* ================= ADMIN: GET ALL PROPERTIES ================= */
-router.get("/admin/all", verifyAdmin, async (req, res) => {
+/* ADMIN ROUTE */
+router.get("/admin/all", async (req, res) => {
   try {
     const properties = await Property.find().sort({ createdAt: -1 });
     res.status(200).json(properties);
@@ -98,37 +91,23 @@ router.get("/admin/all", verifyAdmin, async (req, res) => {
 });
 
 
-/* ================= ADMIN: GET PROPERTY BY ID ================= */
-router.get("/admin/:id", verifyAdmin, async (req, res) => {
-  try {
-    const property = await Property.findById(req.params.id);
-
-    if (!property) {
-      return res.status(404).json({ message: "Property not found" });
-    }
-
-    res.status(200).json(property);
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
-  }
-});
+/* ================= UPDATE PROPERTY ================= */
+// Admin edit karega aur approve karega
+router.put("/:id", upload.array("images"), updateProperty);
 
 
-/* ================= UPDATE PROPERTY (ADMIN) ================= */
-router.put("/:id", verifyAdmin, upload.array("images"), updateProperty);
-
-
-/* ================= DELETE PROPERTY (ADMIN) ================= */
+/* ================= DELETE PROPERTY ================= */
 router.delete("/:id", verifyAdmin, deleteProperty);
 
 
-/* ================= WEBSITE: GET PROPERTY BY ID ================= */
-/* ⚠️ KEEP THIS LAST (Dynamic Route) */
+
+/* ================= GET PROPERTY BY ID ================= */
+// Website ke liye sirf approved property
 router.get("/:id", async (req, res) => {
   try {
     const property = await Property.findOne({
       _id: req.params.id,
-      isApproved: true,
+      isApproved: true   // 👈 IMPORTANT
     });
 
     if (!property) {
@@ -137,9 +116,12 @@ router.get("/:id", async (req, res) => {
 
     res.status(200).json(property);
   } catch (err) {
-    console.error(err);
+    console.error("GET PROPERTY ERROR:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
+
+
+
 
 export default router;
