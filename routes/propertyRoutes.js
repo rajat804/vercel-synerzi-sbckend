@@ -1,5 +1,5 @@
 import express from "express";
-import { addProperty, upload , deleteProperty, updateProperty} from "../controllers/propertyController.js";
+import { addProperty, upload , deleteProperty, updateProperty, getMyProperties, userDeleteProperty} from "../controllers/propertyController.js";
 import { verifyAdmin, verifyUser } from "../middleware/authMiddleware.js";
 import Property from "../models/PropertyModel.js";
 
@@ -107,15 +107,18 @@ router.get("/admin/:id", async (req, res) => {
   }
 });
 
+/* ================= user PROPERTY show ================= */
+router.get("/my-properties", verifyUser, getMyProperties);
 
-/* ================= UPDATE PROPERTY ================= */
 // Admin edit karega aur approve karega
 router.put("/:id", upload.array("images"), updateProperty);
+
+/* ================= user PROPERTY show ================= */
+router.delete("/user-delete/:id", verifyUser, userDeleteProperty);
 
 
 /* ================= DELETE PROPERTY ================= */
 router.delete("/:id", verifyAdmin, deleteProperty);
-
 
 
 /* ================= GET PROPERTY BY ID ================= */
