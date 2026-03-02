@@ -16,6 +16,7 @@ export const upload = multer({
 
 export const addProperty = async (req, res) => {
   try {
+    console.log("REQ USER:", req.user);
     console.log("BODY:", req.body);
     console.log("FILES:", req.files);
 
@@ -135,7 +136,7 @@ export const addProperty = async (req, res) => {
       images: imageUrls,
       isFeatured: isFeatured === "true" || isFeatured === true,
       isLatest: isLatest === "true" || isLatest === true,
-      
+      owner: req.user._id,
     });
 
     res.status(201).json({
