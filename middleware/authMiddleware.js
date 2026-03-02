@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import Admin from "../models/AdminModel.js";
-
+import UserModel from "../models/UserModel.js";
 export const verifyAdmin = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
@@ -20,6 +20,34 @@ export const verifyAdmin = async (req, res, next) => {
     next();
   } catch (err) {
     console.error("VERIFY ADMIN ERROR:", err);
+    res.status(401).json({ message: "Invalid token" });
+  }
+};
+
+
+// middleware/authMiddleware.js
+
+export const verifyUser = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const user = await UserModel.findById(decoded.id).select("-password");
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    req.user = user; // future use ke liye
+    next();
+  } catch (error) {
+    console.error("VERIFY USER ERROR:", error);
     res.status(401).json({ message: "Invalid token" });
   }
 };
