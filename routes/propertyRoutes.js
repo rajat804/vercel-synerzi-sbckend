@@ -1,13 +1,13 @@
 import express from "express";
 import { addProperty, upload , deleteProperty, updateProperty} from "../controllers/propertyController.js";
-import { verifyAdmin } from "../middleware/authMiddleware.js";
+import { verifyAdmin, verifyUser } from "../middleware/authMiddleware.js";
 import Property from "../models/PropertyModel.js";
 
 const router = express.Router();
 
 /* ================= ADD PROPERTY ================= */
 // Jab koi bhi add kare -> default false hona chahiye (Model me set hoga)
-router.post("/add", upload.array("images", 10), addProperty);
+router.post("/add", verifyUser, upload.array("images", 10), addProperty);
 
 
 /* ================= GET ALL PROPERTIES (ONLY APPROVED) ================= */
