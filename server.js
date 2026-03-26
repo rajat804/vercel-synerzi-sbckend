@@ -28,7 +28,8 @@ connectDB();
 const allowedOrigins = [
   "http://localhost:5173",
   "https://synerzi.vercel.app",
-  "https://shreeramrealtygroup.com"
+  "https://shreeramrealtygroup.com",
+  "https://www.shreeramrealtygroup.com",
 ];
 
 const corsOptions = {
